@@ -29,6 +29,34 @@ Jun <- window(tempY[,"Jun"],1970,2019)
 
 
 
+# Set interval manually by adding the ylim and xlim arguements
+
+
+
+
+
+# Adding Series With Different Frequency
+
+
+
+# Using a Table of Time Series
+
+
+
+# 
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
