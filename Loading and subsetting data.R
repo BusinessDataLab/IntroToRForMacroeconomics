@@ -20,4 +20,3 @@ load("plot_data/Climate_module2.rda")
 
 # 2.4 Subsetting based on Logical tests ----
 
-
