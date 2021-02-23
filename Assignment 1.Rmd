@@ -163,36 +163,59 @@ For this part, select any other series in the file assignment1.zip and answer th
 
 * Create a scatter plot of your series expressed in logs against the selected series also expressed in logs.
 
+```{r}
+impoted_dat1 <- read.csv("assignment_data/dat1.csv")
+dat1 <- impoted_dat1[,3]
+
+dat1_ts <- ts(dat1, frequency=4, start=1950)
+dat1_t <- time(dat1_ts)
+
+ldat1 <- log(dat1_ts)
+
+dat1coefT <- coef(lm(ldat1~dat1_t))
+dat1trend <- dat1coefT[1] + dat1coefT[2]*dat1_t
+
+dat1_t2 <- dat1_t^2
+dat1coefT2 <- coef(lm(ldat1~dat1_t+dat1_t2))
+dat1trend2 <- dat1coefT2[1] + dat1coefT2[2]*dat1_t + dat1coefT2[3]*dat1_t2
+
+plot(ldat1,
+     ylab="Expenditure (thousand dollars)",
+     main="Linear Trend for Quarterly Expenditure",
+     lwd=2)
+lines(dat1trend, col=2, lty=2, lwd=2)
+lines(dat1trend2, col=3, lty=2, lwd=3)
+legend("topleft", c("Expenditure","Linear Trend","Quadratic Trend"), col=1:3,
+       lty=1:3, lwd=1:3, bty='n')
+```
+
 * Using the log of the selected series, compute its cyclical component. Then create a scatter plot of this cycle with the cycle of your series computed in Part B.
+
+
+```{r}
+# Extracting the Cyclical Component of Temperature Anomalies
+CSI_dat1  <- ldat1-dat1trend2
+Dec_dat1  <- decompose(CSI_dat1, filter=rep(1/5,5))
+Des_dat1  <- dat1_ts - Dec_dat1$seasonal
+
+C_dat138 <- Dec$trend
+C_dat1  <- Dec_dat1$trend
+plot(C_dat138, C_dat1, pch=21, col=1, bg=1,
+     main="Comovement Between the Cyclical Components of
+ Dat138 and Dat1",
+ xlab="Dat138 Expenditure (thousand dollars)", ylab="Dat1 Expenditure (thousand dollars)")
+
+```
+
+
 
 * Looking at the two scatter plots, what can you say about the type of comovement between the two series?
 
-
 ```{r}
-dat1 <- read.csv("assignment_data/dat1.csv")
-
-dat1_ts <- ts(dat1, frequency=4, start=1950)
-dat1 <- dat1[,3]
-ldat1 <- log(dat1_ts)
-
-plot(ldat1, pch="*", col="darkgreen",
-     xlab="Expenditure (thousand dollars)",
-     ylab="Temperature (0.1 degree Celsius)",
-     main="Co2 Emissions Versus Temperature Anomalies")
+exp_dat <- cbind(C_dat138, C_dat1)
+plot(exp_dat,
+     main="Cyclical Components of Expenditures in thousand dollars for Dat138 and Dat1")
 ```
-
-
-```{r}
-plot(ldat1,
-     xy.labels=FALSE, xy.lines=FALSE,
-     xlab="Precipitation (mm)",
-     ylab="Temperature (degree Celsius)",
-     main="Maximum Temperature Versus Total Precipitation")
-```
-
-
-
-
 
 
 
