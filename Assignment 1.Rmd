@@ -1,0 +1,202 @@
+---
+title: "Assignment 1"
+author: "Eisha Asim"
+date: "2/23/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Assignment 1
+
+Answer the question using the data file. It is an artificial time series from 1950 to 2020. For the exercise, we assume that it is a series of consumption expenditure in thousands of dollars. For each chart that you create, add a main title and axis titles. When the chart contains more than one line, use a different color and shape for each line and add a legend.
+
+## Import Data and Convert to Time series data 
+
+```{r}
+# Import data
+imported_data <- read.csv("assignment_data/dat138.csv")
+dat138 <- imported_data[,3]
+dat138_ts <- ts(dat138, frequency=4, start=1950) # convert to time series object
+
+dat138_t <- time(dat138_ts) # Decimal dates
+```
+
+
+## Part A: Visualization
+1. Plot the series using a line chart. Briefly describe what you see: Is it a positive or negative trend? Is the trend increasing? What kind of short term fluctuations do you observe?
+
+```{r}
+# Plot the series using a line chart
+plot(dat138_ts,
+     ylab="Expenditure(thousands of dollars)", # y axis title
+     xlab = "Time", # x axis title
+     main="Expenditure vs Time" # main chart title
+     )
+
+```
+
+
+2. Answer the previous question using the log-scale. Can you tell if the growth rate is increasing or decreasing on average over the period?
+
+```{r}
+# Plot the series using a line chart
+plot(log(dat138_ts),
+     ylab="Expenditure(thousands of dollars)", # y axis title
+     xlab = "Time", # x axis title
+     main="Log of Expenditure vs Time" # main chart title
+     )
+```
+
+
+3. To better see how the growth rate evolves through time, plot the annualized growth rate of consumption expenditure. Describe what you see. Is it constant on average?
+
+```{r }
+# create annualized data
+dat138Y <- aggregate(dat138_ts, nfrequency = 1, FUN = sum)
+
+# Plot the series using a line chart
+plot(dat138Y,
+     ylab="Annual Expenditure(thousands of dollars)", # y axis title
+     xlab = "Time", # x axis title
+     main="Annualized growth rate of consumption expenditure" # main chart title
+     )
+
+```
+
+
+## Part B: Time Series Decomposition
+
+1. Fit a linear and quadratic trends to your series. Then, create a line chart with your original series and the two trends. Which trend seems to best fit the series? Explain.
+
+```{r}
+dat138coefT <- coef(lm(dat138_ts~dat138_t))
+trend <- dat138coefT[1] + dat138coefT[2]*dat138_t
+
+dat138_t2 <- dat138_t^2
+dat138coefT2 <- coef(lm(dat138_ts~dat138_t+dat138_t2))
+trend2 <- dat138coefT2[1] + dat138coefT2[2]*dat138_t + dat138coefT2[3]*dat138_t2
+
+plot(dat138_ts,
+     ylab="Expenditure (thousand dollars)",
+     main="Linear Trend for Quarterly Expenditure",
+     lwd=2)
+lines(trend, col=2, lty=2, lwd=2)
+lines(trend2, col=3, lty=2, lwd=3)
+legend("topleft", c("Expenditure","Linear Trend","Quadratic Trend"), col=1:3,
+       lty=1:3, lwd=1:3, bty='n')
+```
+
+2. Fit a linear and quadratic trends to the log of your series. Then, create a line chart with the log of your series and the two trends. Which trend seems to best fit the series? Do you see a difference between the best trend in this question and in the previous one? Explain.
+
+```{r}
+ldat183 <- log(dat138_ts)
+
+lcoefT <- coef(lm(ldat183~dat138_t)) ## linear coefficients
+lcoefT2 <- coef(lm(ldat183~dat138_t+dat138_t2)) ## quadratic coefficients
+ltrend <- lcoefT[1] + lcoefT[2]*dat138_t ## linear trend
+ltrend2 <- lcoefT2[1] + lcoefT2[2]*dat138_t + lcoefT2[3]*dat138_t2 ## quadratic trend
+plot(ldat183, lwd=2, main="Expenditure With a Linear and Quadratic Trends (Log-Scale)",
+     ylab="log(dat138_ts)")
+lines(ltrend, col=2, lty=2, lwd=4)
+lines(ltrend2, col=4, lty=3, lwd=4)
+legend("topleft", c("log(dat138_ts)", "Linear","Quadratic"), col=c(1,2,4), lty=1:3,
+       lwd=c(2,4,4), bty='n')
+```
+
+
+Answer the following questions using the log of your series and the trends computed in question 2.
+
+3. Plot the detrended series using the trend that best fit the series. Briefly describe what you see: Do you better detect short term fluctuations?
+
+```{r}
+#plot(dat138_ts-trend, lwd=2,main="Detrended Expenditure Series Using a Linear Trend", #ylab="Expenditure (thousand dollars)")
+
+
+plot(dat138_ts-trend2, lwd=2,
+     main="Detrended Expenditure Series Using a Quadratic Trend",
+     ylab="Expenditure (thousand dollars)")
+
+
+```
+
+4. Using a moving average of order 5, compute the cyclical component of your series. Then, plot the cycle and briefly describe what you see: interpret the values of some peaks and troughs.
+
+```{r}
+CSI <- dat138_ts-trend2
+C <- filter(CSI, filter=rep(1/5,5))
+
+plot(CSI, lwd=2,
+     main="Detrended Expenditure Series and Its Cyclical Component",
+     ylab="Expenditure (thousand dollars)")
+lines(C, col=2, lwd=3, lty=2)
+legend("topleft", c("Detrended Expenditure", "Cycle"), col=1:2, lty=1:2,
+       lwd=2:3, bty='n') 
+```
+
+
+5. Plot the low frequency of your series and briefly describe what you see.
+
+```{r}
+CT <- trend2+C
+plot(CT, lwd=2,
+     main="The Low Frequency Component of  Expenditure Series",
+     ylab="Expenditure (thousand dollars)") 
+```
+
+6. Compute the seasonal component and represent it on a bar chart (only the 4 quarters). Interpret the four seasonal values.
+
+```{r }
+Dec <- decompose(CSI, filter=rep(1/5,5))
+
+S <- Dec$figure 
+barplot(S, main="Expenditure Series Seasonal Component",
+        names.arg=c("Q1","Q2","Q3","Q4"))
+```
+
+
+## Part C: Comovement
+
+For this part, select any other series in the file assignment1.zip and answer the following questions:
+
+* Create a scatter plot of your series expressed in logs against the selected series also expressed in logs.
+
+* Using the log of the selected series, compute its cyclical component. Then create a scatter plot of this cycle with the cycle of your series computed in Part B.
+
+* Looking at the two scatter plots, what can you say about the type of comovement between the two series?
+
+
+```{r}
+dat1 <- read.csv("assignment_data/dat1.csv")
+
+dat1_ts <- ts(dat1, frequency=4, start=1950)
+dat1 <- dat1[,3]
+ldat1 <- log(dat1_ts)
+
+plot(ldat1, pch="*", col="darkgreen",
+     xlab="Expenditure (thousand dollars)",
+     ylab="Temperature (0.1 degree Celsius)",
+     main="Co2 Emissions Versus Temperature Anomalies")
+```
+
+
+```{r}
+plot(ldat1,
+     xy.labels=FALSE, xy.lines=FALSE,
+     xlab="Precipitation (mm)",
+     ylab="Temperature (degree Celsius)",
+     main="Maximum Temperature Versus Total Precipitation")
+```
+
+
+
+
+
+
+
+
+
+
+
